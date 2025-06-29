@@ -1,146 +1,125 @@
-// index.js
-// The smart, stateless API server powered by Express.js
 
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
-const db = require('./db.js'); // Import our generated database
+const db = require('./db.js');
 
 const app = express();
 
 // --- Middleware ---
-app.use(cors()); // Enable Cross-Origin Resource Sharing for all routes
-app.use(express.json()); // Enable parsing of JSON request bodies
+app.use(cors({ exposedHeaders: ['X-Total-Count'] }));
+app.use(express.json());
 
 // --- Static File Serving ---
-// Serve the beautiful landing page we created
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-
-// --- Dynamic API Routes ---
-
+// --- Dynamic API Router ---
 const router = express.Router();
 
-// GET all items for a resource
+// Main handler for ALL general resource requests
 router.get('/:resource', (req, res) => {
-    const resource = req.params.resource;
-    if (db[resource]) {
-        res.json(db[resource]);
-    } else {
-        res.status(404).json({ error: `Resource '${resource}' not found.` });
+    const { resource } = req.params;
+    if (!db[resource]) {
+        return res.status(404).json({ error: `Resource '${resource}' not found.` });
     }
+    let results = [...db[resource]];
+    const { _page = 1, _limit = 10, _sort, _order = 'asc', q, ...filters } = req.query;
+
+    Object.keys(filters).forEach(key => {
+        results = results.filter(item => String(item[key]) === String(filters[key]));
+    });
+    if (q) {
+        const searchTerm = q.toLowerCase();
+        results = results.filter(item => Object.values(item).some(value => String(value).toLowerCase().includes(searchTerm)));
+    }
+    if (_sort) {
+        results.sort((a, b) => {
+            const valA = a[_sort];
+            const valB = b[_sort];
+            if (valA < valB) return _order === 'asc' ? -1 : 1;
+            if (valA > valB) return _order === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    const totalCount = results.length;
+    res.setHeader('X-Total-Count', totalCount);
+
+    const page = parseInt(_page);
+    const limit = parseInt(_limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    results = results.slice(startIndex, endIndex);
+
+    res.json(results);
 });
 
 // GET a single item by ID
 router.get('/:resource/:id', (req, res) => {
     const { resource, id } = req.params;
-    if (!db[resource]) {
-        return res.status(404).json({ error: `Resource '${resource}' not found.` });
-    }
+    if (!db[resource]) { return res.status(404).json({ error: `Resource '${resource}' not found.` }); }
     const item = db[resource].find(item => item.id == id);
-    if (item) {
-        res.json(item);
-    } else {
-        res.status(404).json({ error: `Item with ID ${id} not found in '${resource}'.` });
-    }
+    if (item) { res.json(item); } 
+    else { res.status(404).json({ error: `Item with ID ${id} not found in '${resource}'.` }); }
 });
 
-// POST (create) a new item
+// --- Smart POST with Enhanced Validation ---
 router.post('/:resource', (req, res) => {
     const { resource } = req.params;
-    if (!db[resource]) {
-        return res.status(404).json({ error: `Resource '${resource}' not found.` });
-    }
+    if (!db[resource]) { return res.status(404).json({ error: `Resource '${resource}' not found.` }); }
     
-    // --- The "SMART" Validation Part ---
+    // --- Specific Validation Logic ---
     const body = req.body;
-    // Example validation: for posts, title and body are required.
+    let errors = [];
     if (resource === 'posts' || resource === 'articles') {
-        if (!body.title || !body.body) {
-            return res.status(400).json({ error: 'For posts, `title` and `body` fields are required.' });
-        }
-    }
-     if (resource === 'products') {
-        if (!body.name || !body.price) {
-            return res.status(400).json({ error: 'For products, `name` and `price` fields are required.' });
-        }
+        if (!body.title) errors.push('`title` is required.');
+        if (!body.body) errors.push('`body` is required.');
+    } else if (resource === 'users') {
+        if (!body.name) errors.push('`name` is required.');
+        if (!body.email) errors.push('`email` is required.');
+        else if (!body.email.includes('@')) errors.push('`email` must be a valid email address.');
+    } else if (resource === 'reviews') {
+        if (!body.rating) errors.push('`rating` is required.');
+        else if (isNaN(body.rating) || body.rating < 1 || body.rating > 5) errors.push('`rating` must be a number between 1 and 5.');
+        if (!body.productId) errors.push('`productId` is required.');
+        if (!body.userId) errors.push('`userId` is required.');
     }
 
-    // --- Fake Creation ---
+    if (errors.length > 0) {
+        return res.status(400).json({ error: 'Validation failed', details: errors });
+    }
+
+    // Fake Creation
     const newId = (db[resource][db[resource].length - 1]?.id || 0) + 1;
-    const newItem = { id: newId, ...body };
-    
-    // We send back the "created" item, but we DON'T save it. This is the stateless magic.
-    res.status(201).json(newItem);
+    res.status(201).json({ id: newId, ...body });
 });
 
-// PUT (update) an item
+// --- Smart PUT with Validation ---
 router.put('/:resource/:id', (req, res) => {
     const { resource, id } = req.params;
-    if (!db[resource]) {
-        return res.status(404).json({ error: `Resource '${resource}' not found.` });
-    }
-    const itemIndex = db[resource].findIndex(item => item.id == id);
-    if (itemIndex === -1) {
-        return res.status(404).json({ error: `Item with ID ${id} not found in '${resource}'.` });
-    }
-    
-    // --- Fake Update ---
-    const updatedItem = { ...req.body, id: parseInt(id) };
-    res.status(200).json(updatedItem);
+     if (!db[resource]) { return res.status(404).json({ error: `Resource '${resource}' not found.` }); }
+    const itemExists = db[resource].some(item => item.id == id);
+    if(!itemExists) { return res.status(404).json({ error: `Item with ID ${id} not found.` }); }
+
+    // You can add validation for PUT as well
+    // For simplicity, we'll just fake the update
+    res.status(200).json({ ...req.body, id: parseInt(id) });
 });
 
-// DELETE an item
-router.delete('/:resource/:id', (req, res) => {
-    const { resource, id } = req.params;
-    if (!db[resource]) {
-        return res.status(404).json({ error: `Resource '${resource}' not found.` });
-    }
-    const item = db[resource].find(item => item.id == id);
-    if (!item) {
-        return res.status(404).json({ error: `Item with ID ${id} not found in '${resource}'.` });
-    }
-    
-    // --- Fake Deletion ---
-    // Just send a success response without actually deleting.
-    res.status(200).json({});
-});
+// --- DELETE ---
+router.delete('/:resource/:id', (req, res) => res.status(200).json({}));
 
-// --- Nested Routes Example ---
-// GET all posts for a specific user
-router.get('/users/:id/posts', (req, res) => {
-    const userId = parseInt(req.params.id);
-    const posts = db.posts.filter(post => post.userId === userId);
-    if (posts) {
-        res.json(posts);
-    } else {
-        res.status(404).json({ error: `User with ID ${userId} or their posts not found.` });
-    }
-});
+// Advanced Nested Routes
+router.get('/products/:id/reviews', (req, res) => res.json(db.reviews.filter(r => r.productId === parseInt(req.params.id))));
+router.get('/users/:id/posts', (req, res) => res.json(db.posts.filter(p => p.userId === parseInt(req.params.id))));
+router.get('/users/:id/cart', (req, res) => res.json(db.carts.find(c => c.userId === parseInt(req.params.id))));
+router.get('/categories/:id/products', (req, res) => res.json(db.products.filter(p => p.categoryId === parseInt(req.params.id))));
 
-// GET all comments for a specific post
-router.get('/posts/:id/comments', (req, res) => {
-    const postId = parseInt(req.params.id);
-    const comments = db.comments.filter(comment => comment.postId === postId);
-    if (comments) {
-        res.json(comments);
-    } else {
-        res.status(404).json({ error: `Post with ID ${postId} or its comments not found.` });
-    }
-});
-
-// Apply the router to the /api path
 app.use('/api', router);
 
-
-// --- Server Initialization ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`FakeAPI server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`The ULTIMATE FakeAPI server running on http://localhost:${PORT}`));
 
-// Export the app for Vercel
 module.exports = app;
-

@@ -1,130 +1,133 @@
-// db.js
-// This file programmatically generates a rich and compliant mock database.
 
-/**
- * A utility function to create a specified number of items using a generator function.
- * @param {number} count - The number of items to create.
- * @param {function} generator - A function that returns a single item object.
- * @returns {Array<object>} - An array of generated items.
- */
-const createItems = (count, generator) => {
-    return Array.from({ length: count }, (_, i) => generator(i + 1));
-};
+// --- UTILITY FUNCTIONS ---
+const createItems = (count, generator) => Array.from({ length: count }, (_, i) => generator(i + 1));
+const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const LOREM_IPSUM_SHORT = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
+const LOREM_IPSUM_MEDIUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.";
+const LOREM_IPSUM_LONG = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. " + LOREM_IPSUM_MEDIUM;
 
-// --- Data Generators ---
+// --- DATA BLUEPRINTS ---
+const USERS_COUNT = 100;
+const PRODUCTS_COUNT = 500;
+const CATEGORIES_COUNT = 15;
+const REVIEWS_COUNT = 1000;
+const ORDERS_COUNT = 250;
+const POSTS_COUNT = 200;
+const COMMENTS_COUNT = 1000;
+const BOOKS_COUNT = 100;
+const COMPANIES_COUNT = 50;
+const EMPLOYEES_COUNT = 300;
+const PROJECTS_COUNT = 100;
+const TASKS_COUNT = 500;
 
-const createGenericUser = (id) => ({
+// E-COMMERCE: Categories
+const categories = createItems(CATEGORIES_COUNT, (id) => ({
     id,
-    name: ['John Smith', 'Daniel Garcia', 'Kenji Tanaka', 'David Miller', 'Omar Khan'][id % 5],
-    username: ['john.s', 'daniel.g', 'kenji.t', 'david.m', 'omar.k'][id % 5],
+    name: ['Electronics', 'Books', 'Clothing', 'Home & Kitchen', 'Sports & Outdoors', 'Health & Beauty', 'Toys & Games', 'Automotive', 'Groceries', 'Computers', 'Smart Home', 'Video Games', 'Jewelry', 'Watches', 'Office Supplies'][id - 1],
+    image: `https://picsum.photos/seed/cat${id}/600/400`
+}));
+
+// E-COMMERCE: Products
+const products = createItems(PRODUCTS_COUNT, (id) => ({
+    id,
+    name: `Pro ${getRandomItem(['Headphones', 'Laptop', 'Watch', 'T-Shirt', 'Blender', 'Dumbbells', 'Action Figure', 'Drill Kit', 'Novel', 'Monitor', 'Keyboard'])} Model #${id}`,
+    description: LOREM_IPSUM_LONG,
+    price: parseFloat((Math.random() * 500 + 20).toFixed(2)),
+    categoryId: (id % CATEGORIES_COUNT) + 1,
+    brand: ['GlobalTech', 'Essentials', 'ProGear', 'HomeLuxe', 'Quantum'][id % 5],
+    sku: `SKU-${String(id).padStart(8, '0')}`,
+    stock: Math.floor(Math.random() * 100),
+    images: [ `https://picsum.photos/seed/prod${id}a/800/800`, `https://picsum.photos/seed/prod${id}b/800/800`, `https://picsum.photos/seed/prod${id}c/800/800` ],
+    specifications: { weight: `${(Math.random() * 5).toFixed(2)} kg`, dimensions: `${Math.ceil(Math.random()*20)}x${Math.ceil(Math.random()*20)}x${Math.ceil(Math.random()*20)} cm`, material: getRandomItem(['Plastic', 'Metal', 'Cotton', 'Wood', 'Ceramic']) },
+    avgRating: parseFloat((3.0 + Math.random() * 2.0).toFixed(2)),
+    tags: ['new-arrival', 'best-seller', 'eco-friendly'].slice(0, 1 + (id % 3))
+}));
+
+// E-COMMERCE: Users
+const users = createItems(USERS_COUNT, (id) => ({
+    id,
+    name: ['John Smith', 'Daniel Garcia', 'Kenji Tanaka', 'David Miller', 'Omar Khan', 'Alex Chen', 'Mohammed Al-Farsi', 'Ivan Petrov', 'Marco Rossi', 'Leo Müller'][id % 10],
+    username: `user_${id}`,
     email: `user${id}@example.com`,
+    address: { street: `${id * 100} Commerce St`, city: 'Metro City', zipcode: `${10000 + id}` },
     phone: `1-555-123-${String(id).padStart(4, '0')}`,
-    website: `global-tech-${id}.com`,
+    avatar: `https://i.pravatar.cc/150?u=user${id}`,
+    cartId: id
+}));
+
+// E-COMMERCE: Carts
+const carts = createItems(USERS_COUNT, (id) => ({
+    id, userId: id,
+    items: createItems(1 + (id % 4), (i) => ({ productId: (id * i) % PRODUCTS_COUNT + 1, quantity: 1 + (i % 2) })),
+}));
+
+// E-COMMERCE: Reviews
+const reviews = createItems(REVIEWS_COUNT, (id) => ({ id, productId: (id % PRODUCTS_COUNT) + 1, userId: (id % USERS_COUNT) + 1, rating: Math.ceil(Math.random() * 5), title: getRandomItem(['Amazing Product!', 'Good value', 'Not what I expected']), comment: LOREM_IPSUM_MEDIUM, date: `2025-06-${(id % 30) + 1}` }));
+
+// E-COMMERCE: Orders
+const orders = createItems(ORDERS_COUNT, (id) => {
+    const items = createItems(1 + (id % 4), (i) => {
+        const product = products[(id * i) % PRODUCTS_COUNT];
+        return { productId: product.id, productName: product.name, quantity: 1 + (i % 2), pricePerUnit: product.price };
+    });
+    const subtotal = items.reduce((sum, item) => sum + (item.pricePerUnit * item.quantity), 0);
+    return { id, userId: (id % USERS_COUNT) + 1, items: items, total: parseFloat((subtotal * 1.14 + 15.00).toFixed(2)), status: getRandomItem(['pending', 'processing', 'shipped', 'delivered']), orderDate: `2025-05-${(id % 30) + 1}`, trackingNumber: `TN${String(id).padStart(10, '0')}` }
 });
 
-const createPost = (id) => ({
-    id,
-    userId: (id % 10) + 1, // Link to one of the first 10 users
-    title: `Post Title Number ${id}: A Topic of Interest`,
-    body: `This is the body content for post number ${id}. It contains details and explanations about the main topic, structured to be clear and informative for the reader.`,
-});
+// SOCIAL & CONTENT
+const posts = createItems(POSTS_COUNT, (id) => ({ id, userId: (id % USERS_COUNT) + 1, title: `Insight into ${['Global Economics', 'Tech Innovations', 'Art History', 'Healthy Lifestyles'][id % 4]} - Entry #${id}`, body: LOREM_IPSUM_LONG, tags: ['discussion', 'deep-dive', 'analysis'], likes: Math.floor(Math.random() * 1000) }));
+const comments = createItems(COMMENTS_COUNT, (id) => ({ id, postId: Math.ceil(id / (COMMENTS_COUNT/POSTS_COUNT)), userId: (id % USERS_COUNT) + 1, body: `Replying: ${LOREM_IPSUM_MEDIUM}`, likes: Math.floor(Math.random() * 50) }));
+const books = createItems(BOOKS_COUNT, (id) => ({ id, title: `The ${getRandomItem(['Crimson', 'Silent', 'Forgotten'])} ${getRandomItem(['Cipher', 'Garden', 'Witness'])}`, authorId: (id % USERS_COUNT) + 1, isbn: `978-0-${String(200000000 + id).padStart(9, '0')}`, publicationYear: 2024 - (id % 50), genre: 'Mystery', pages: 300 + (id % 200), description: LOREM_IPSUM_LONG, coverImage: `https://picsum.photos/seed/book${id}/400/600` }));
 
-const createComment = (id) => ({
-    id,
-    postId: (id % 50) + 1, // Link to one of the first 50 posts
-    name: `Commenter Name ${id}`,
-    email: `commenter${id}@example.com`,
-    body: `This is a useful comment on the post. It adds value and perspective to the discussion. Comment ID: ${id}.`,
-});
+// CORPORATE & PRODUCTIVITY
+const companies = createItems(COMPANIES_COUNT, (id) => ({ id, name: `Innovate Corp ${id}`, industry: "FinTech", location: "New York", numberOfEmployees: 50 + id * 5, website: `innovate${id}.com`}));
+const employees = createItems(EMPLOYEES_COUNT, (id) => ({id, name: `Employee #${id}`, email: `emp${id}@innovate.corp`, companyId: (id % COMPANIES_COUNT)+1, position: 'Software Engineer'}));
+const projects = createItems(PROJECTS_COUNT, (id) => ({ id, companyId: (id % COMPANIES_COUNT) + 1, name: `Project Phoenix ${id}`, status: getRandomItem(['planning', 'in-progress', 'completed']), budget: 50000 + id * 1000}));
+const tasks = createItems(TASKS_COUNT, (id) => ({id, projectId: (id % PROJECTS_COUNT)+1, employeeId: (id % EMPLOYEES_COUNT)+1, title: `Develop module ${id}`, status: getRandomItem(['todo', 'in-progress', 'done']), dueDate: `2025-08-${(id%30)+1}`}));
 
-const createProduct = (id) => ({
-    id,
-    name: ['Organic Honey', 'Yoga Mat', 'Art Print', 'Premium Coffee Beans', 'Reusable Water Bottle'][id % 5],
-    price: parseFloat((Math.random() * 100 + 10).toFixed(2)),
-    description: `A high-quality, universally appealing product. Model number: P${id}.`,
-});
+// REAL ESTATE & LISTINGS
+const createProperty = (type) => (id) => ({ id, type, title: `Luxurious ${type} with Ocean View`, description: LOREM_IPSUM_LONG, price: (type === 'Villa' ? 1250000 : 450000) + (id * 10000), address: { street: `${id} Ocean Drive`, city: 'Miami'}, area_sqm: (type === 'Villa' ? 350 : 130) + (id * 5), bedrooms: (type === 'Villa' ? 5 : 3), bathrooms: (type === 'Villa' ? 4 : 2), amenities: ['Swimming Pool', 'Gym', 'Private Garden'], images: [`https://picsum.photos/seed/prop${id}a/1024/768`, `https://picsum.photos/seed/prop${id}b/1024/768`] });
+const vehicles = createItems(100, (id) => ({id, make: getRandomItem(['Honda','Toyota','Ford','BMW']), model: `Model Z${id}`, year: 2024 - (id%10), price: 15000 + id*100, type: 'Sedan', mileage: 10000 + id*500, fuelType: 'Gasoline'}));
 
-const createBook = (id) => ({
-    id,
-    title: ['The Seeker\'s Guide', 'A Brief History of Time', 'The Principles of Science', 'Stories of Innovators', 'The Art of Focus'][id % 5],
-    author: `Global Author ${id % 10 + 1}`,
-    genre: ['Spirituality', 'Science', 'Non-Fiction', 'Biography', 'Self-Help'][id % 5],
-    isbn: `978-3-16-148410-${id % 10}`,
-});
+// EDUCATION
+const courses = createItems(50, (id) => ({id, title: `Introduction to ${getRandomItem(['Quantum Physics', 'Web Development', 'Ancient History', 'Digital Marketing'])}`, instructorId: (id%USERS_COUNT)+1, duration: `${10+id} hours`, level: 'Beginner'}));
+const students = createItems(200, (id) => ({id, name: `Student #${id}`, email:`student${id}@university.edu`, major: 'Computer Science', enrollmentYear: 2022}));
+const enrollments = createItems(400, (id) => ({id, studentId: (id%STUDENTS_COUNT)+1, courseId: (id%COURSES_COUNT)+1, grade: getRandomItem(['A','B','C','D','In Progress'])}));
 
-const createPhoto = (id) => ({
-    id,
-    albumId: (id % 10) + 1,
-    title: `Photo Title ${id}`,
-    url: `https://placehold.co/600x600/1e293b/ffffff?text=Photo+${id}`,
-    thumbnailUrl: `https://placehold.co/150x150/1e293b/ffffff?text=Thumb+${id}`,
-});
+// HEALTHCARE
+const patients = createItems(200, (id) => ({id, name: `Patient #${id}`, dob: `1990-01-${(id%30)+1}`, bloodType: getRandomItem(['A+','B+','O-','AB+'])}));
+const doctors = createItems(50, (id) => ({id, name: `Dr. ${getRandomItem(['Smith','Jones','Williams'])}`, specialty: getRandomItem(['Cardiology','Neurology','Pediatrics'])}));
+const appointments = createItems(500, (id) => ({id, patientId: (id%PATIENTS_COUNT)+1, doctorId: (id%DOCTORS_COUNT)+1, date: `2025-09-${(id%30)+1}`, reason: 'Check-up'}));
 
-const createTodo = (id) => ({
-    id,
-    userId: (id % 10) + 1,
-    title: `Task to be completed number ${id}`,
-    completed: id % 2 === 0,
-});
+// FINANCE
+const transactions = createItems(1000, (id) => ({id, fromAccountId: (id%USERS_COUNT)+1, toAccountId: ((id+10)%USERS_COUNT)+1, amount: parseFloat((Math.random()*1000).toFixed(2)), currency: 'USD', date: new Date().toISOString()}));
+const accounts = createItems(USERS_COUNT, (id) => ({id, userId: id, account_number: `ACC${String(id).padStart(12, '0')}`, balance: parseFloat((Math.random()*50000).toFixed(2)), currency: 'USD'}));
 
-const createRestaurant = (id) => ({
-    id,
-    name: `The Global Kitchen ${id}`,
-    cuisine: ['Italian', 'Japanese', 'Mediterranean', 'Grill', 'Fusion'][id % 5],
-    rating: parseFloat((Math.random() * 2 + 3).toFixed(1)), // Rating between 3.0 and 5.0
-    address: `${id * 10} International Blvd, Global City`,
-});
-
-const createPhone = (id) => ({
-    id,
-    brand: ['TechUp', 'Connecta', 'Innovate'][id % 3],
-    model: `Model X${id}`,
-    price: parseFloat((Math.random() * 800 + 200).toFixed(2)),
-    storage: [64, 128, 256][id % 3] + 'GB',
-});
-
-const createProperty = (type) => (id) => ({
-    id,
-    type,
-    title: `Spacious ${type} in a prime location`,
-    price: (type === 'Villa' ? 1000000 : 250000) + id * 10000,
-    area_sqm: (type === 'Villa' ? 300 : 120) + id * 5,
-    bedrooms: (type === 'Villa' ? 5 : 3) + (id % 2),
-    location: `District ${id % 10 + 1}, Metro City`,
-});
+// MISC
+const todos = createItems(200, (id) => ({ id, userId: (id % USERS_COUNT) + 1, title: `Complete report #${id}`, completed: Math.random() > 0.5 }));
+const photos = createItems(500, (id) => ({ id, albumId: (id % 50)+1, title: `Photo from vacation ${id}`, url: `https://picsum.photos/seed/photo${id}/600/600`}));
+const albums = createItems(50, (id) => ({id, userId: (id%USERS_COUNT)+1, title: `Trip to ${getRandomItem(['The Mountains','The Beach','The City'])}`}));
 
 
-// The main database object
 const db = {
-    users: createItems(50, createGenericUser),
-    posts: createItems(100, createPost),
-    comments: createItems(200, createComment),
-    products: createItems(50, createProduct),
-    books: createItems(50, createBook),
-    photos: createItems(100, createPhoto),
-    albums: createItems(10, (id) => ({ id, userId: (id % 5) + 1, title: `Album Title ${id}` })),
-    todos: createItems(100, createTodo),
-    recipes: createItems(50, (id) => ({ id, name: `Healthy Recipe ${id}`, ingredients: ['Ingredient A', 'Ingredient B'] })),
-    restaurants: createItems(50, createRestaurant),
-    companies: createItems(50, (id) => ({ id, name: `Global Tech Solutions ${id}`, sector: 'IT' })),
-    orders: createItems(50, (id) => ({ id, userId: (id % 10) + 1, productId: (id % 20) + 1, quantity: (id % 5) + 1 })),
-    invoices: createItems(50, (id) => ({ id, orderId: id, amount: parseFloat((Math.random() * 500 + 50).toFixed(2)), status: 'paid' })),
-    vehicles: createItems(50, (id) => ({ id, make: 'AutoBrand', model: `Model Y${id}`, year: 2020 + (id % 5) })),
-    articles: createItems(100, createPost), // re-using post generator for simplicity
-    events: createItems(50, (id) => ({ id, title: `Community Event ${id}`, date: '2025-10-26' })),
-    teams: createItems(20, (id) => ({ id, name: `Development Team ${id}` })),
-    projects: createItems(30, (id) => ({ id, teamId: (id % 20) + 1, name: `Project Alpha ${id}` })),
-    reviews: createItems(100, (id) => ({ id, productId: (id % 50) + 1, rating: (id % 5) + 1, text: 'Great product!' })),
-    locations: createItems(50, (id) => ({ id, name: `City Center ${id}`, lat: 34.0522, lon: -118.2437 })),
-    jobs: createItems(50, (id) => ({ id, title: `Software Engineer ${id}`, companyId: (id % 50) + 1 })),
-    tasks: createItems(100, (id) => ({ id, projectId: (id % 30) + 1, title: `Develop feature ${id}` })),
-    forums: createItems(10, (id) => ({ id, name: `General Discussion ${id}` })),
-    threads: createItems(50, (id) => ({ id, forumId: (id % 10) + 1, title: `Interesting Thread ${id}` })),
-    messages: createItems(200, (id) => ({ id, threadId: (id % 50) + 1, userId: (id % 50) + 1, text: 'This is a reply.' })),
-    phones: createItems(50, createPhone),
+    // E-Commerce
+    users, products, categories, reviews, carts, orders,
+    // Social & Content
+    posts, comments, books,
+    // Corporate
+    companies, employees, projects, tasks,
+    // Listings
     apartments: createItems(50, createProperty('Apartment')),
     villas: createItems(50, createProperty('Villa')),
+    vehicles,
+    // Education
+    courses, students, enrollments,
+    // Healthcare
+    patients, doctors, appointments,
+    // Finance
+    transactions, accounts,
+    // Misc
+    todos, photos, albums
 };
 
-// CommonJS export for Node.js environment
 module.exports = db;

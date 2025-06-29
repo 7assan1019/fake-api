@@ -118,7 +118,7 @@
                 <div>
                     <p class="text-slate-600 dark:text-slate-400 mb-2" data-translate-key="quick_start_desc">Run this code in your console to get started:</p>
                     <div class="code-block">
-                        <pre><code class="language-js"><span class="keyword">fetch</span>(<span class="string">'https://your-app.vercel.app/api/posts'</span>)
+                        <pre><code class="language-js"><span class="keyword">fetch</span>(<span class="string">'https://fake-api-five-gold.vercel.app/api/posts'</span>)
   .<span class="method">then</span>(response => response.json())
   .<span class="method">then</span>(json => console.log(json))</code></pre>
                     </div>
@@ -175,7 +175,7 @@
                 The API has many different resources. Click on any resource to see interactive examples below.
             </p>
             <p class="text-center text-slate-600 dark:text-slate-400 mb-8 max-w-2xl mx-auto">
-                <span data-translate-key="base_url">Base URL:</span> <code class="bg-gray-200 dark:bg-slate-700 text-sky-600 dark:text-yellow-300 px-2 py-1 rounded">https://your-app.vercel.app/api</code>
+                <span data-translate-key="base_url">Base URL:</span> <code class="bg-gray-200 dark:bg-slate-700 text-sky-600 dark:text-yellow-300 px-2 py-1 rounded">https://fake-api-five-gold.vercel.app/api</code>
             </p>
             <div id="resource-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 text-center">
                 <!-- Links will be populated by JS -->
@@ -455,19 +455,23 @@
         }
 
         function updateExampleCode(resource) {
-            const baseUrl = 'https://your-app.vercel.app/api';
+            // CORRECTED BASE URL
+            const baseUrl = 'https://fake-api-five-gold.vercel.app/api';
             
             document.querySelectorAll('.resource-link').forEach(link => {
                 link.classList.toggle('active', link.dataset.resourceName === resource);
             });
 
+            // GET All
             document.getElementById('get-all-code').innerHTML = `<span class="keyword">fetch</span>(<span class="string">'${baseUrl}/${resource}'</span>)
   .<span class="method">then</span>(res => res.json())
   .<span class="method">then</span>(json => console.log(json))`;
             
+            // GET One
             document.getElementById('get-one-code').innerHTML = `<span class="keyword">fetch</span>(<span class="string">'${baseUrl}/${resource}/1'</span>)
   .<span class="method">then</span>(...)`;
             
+            // POST
             let postBody = `{
     <span class="comment">// ...data matching the resource structure</span>
   }`;
@@ -505,9 +509,10 @@
   .<span class="method">then</span>(json => console.log(json));
 <span class="comment">
 // 👇 Expected Response
-// { id: 51, ... }</span>`;
+// { id: 101, ... }</span>`;
 
-            document.getElementById('nested-code').innerHTML = `<span class="comment">// Get all comments for post with id 1</span>
+            // Nested
+             document.getElementById('nested-code').innerHTML = `<span class="comment">// Get all comments for post with id 1</span>
 <span class="keyword">fetch</span>(<span class="string">'${baseUrl}/posts/1/comments'</span>)
   .<span class="method">then</span>(res => res.json())
   .<span class="method">then</span>(json => console.log(json))

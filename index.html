@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<!-- The 'dark' class is applied by default, and will be controlled by JavaScript -->
+<html lang="en" dir="ltr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FakeAPI - Smart API for Development</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        // Set Tailwind dark mode to work with the 'class' strategy
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        body.lang-ar { font-family: 'Cairo', sans-serif; }
+        body.lang-en, body.lang-fr, body.lang-ru { font-family: 'Roboto', sans-serif; }
+
+        .gradient-bg-dark {
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #334155);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        .gradient-bg-light {
+             background: linear-gradient(-45deg, #e2e8f0, #f1f5f9, #f8fafc);
+             background-size: 400% 400%;
+             animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- Code Block Styling --- */
+        /* Dark Mode (Default) */
+        .code-block {
+            background-color: #0d1117; border: 1px solid #30363d; border-radius: 8px;
+            padding: 16px; color: #c9d1d9; font-family: monospace;
+            font-size: 14px; line-height: 1.5; overflow-x: auto; direction: ltr;
+        }
+        .dark .code-block .comment { color: #8b949e; }
+        .dark .code-block .keyword { color: #ff7b72; }
+        .dark .code-block .string { color: #a5d6ff; }
+        .dark .code-block .number { color: #79c0ff; }
+        .dark .code-block .method { color: #d2a8ff; }
+
+        /* Light Mode */
+        .light .code-block {
+            background-color: #f6f8fa; border: 1px solid #d0d7de; color: #24292f;
+        }
+        .light .code-block .comment { color: #6e7781; }
+        .light .code-block .keyword { color: #cf222e; }
+        .light .code-block .string { color: #0a3069; }
+        .light .code-block .number { color: #0550ae; }
+        .light .code-block .method { color: #8250df; }
+        
+        /* --- Active Resource Link Styling --- */
+        .resource-link.active {
+            transform: scale(1.05);
+        }
+        /* Dark Mode */
+        .dark .resource-link.active {
+            background-color: #0369a1; border-color: #38bdf8; color: #ffffff;
+        }
+        .dark .resource-link.active a { color: #ffffff; }
+
+        /* Light Mode */
+        .light .resource-link.active {
+            background-color: #0ea5e9; border-color: #38bdf8; color: #ffffff;
+        }
+        .light .resource-link.active a { color: #ffffff; }
+
+        /* --- Language Button Styling --- */
+        .lang-btn.active {
+            background-color: #38bdf8; color: #020617; font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-slate-900 text-slate-800 dark:text-slate-300 transition-colors duration-300">
+
+    <!-- Language Switcher & Header -->
+    <header class="shadow-lg sticky top-0 z-10 gradient-bg-light dark:gradient-bg-dark text-slate-800 dark:text-white">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold" data-translate-key="title">FakeAPI</h1>
+            <div class="flex items-center gap-4">
+                <div class="flex space-x-1 sm:space-x-2 bg-gray-200 dark:bg-slate-700/50 p-1 rounded-full text-sm">
+                    <button onclick="setLanguage('en')" class="lang-btn px-3 py-1 rounded-full" id="btn-en">EN</button>
+                    <button onclick="setLanguage('ar')" class="lang-btn px-3 py-1 rounded-full" id="btn-ar">AR</button>
+                    <button onclick="setLanguage('fr')" class="lang-btn px-3 py-1 rounded-full" id="btn-fr">FR</button>
+                    <button onclick="setLanguage('ru')" class="lang-btn px-3 py-1 rounded-full" id="btn-ru">RU</button>
+                </div>
+                <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 focus:outline-none rounded-lg text-sm p-2.5">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm-1.414 8.486l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 011.414-1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6">
+        <!-- Hero Section -->
+        <section class="text-center pt-16 pb-8">
+            <h2 class="text-4xl md:text-6xl font-black mb-4 text-slate-900 dark:text-white" data-translate-key="hero_title">Welcome to FakeAPI</h2>
+            <p class="text-lg md:text-2xl font-bold text-slate-700 dark:text-slate-300 mb-2" data-translate-key="hero_subtitle">The Next Generation of Mock APIs for Developers.</p>
+            <p class="max-w-3xl mx-auto text-slate-600 dark:text-slate-400" data-translate-key="hero_description">
+                We provide a smart, stateless API. Test POST, PUT, DELETE requests with real data validation and realistic responses, without permanent data storage or clutter.
+            </p>
+        </section>
+
+        <!-- Quick Start Section -->
+        <section id="quick-start" class="mb-16">
+            <h3 class="text-3xl font-bold text-center mb-8 text-slate-900 dark:text-white" data-translate-key="quick_start_title">Quick Start</h3>
+            <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-slate-600 dark:text-slate-400 mb-2" data-translate-key="quick_start_desc">Run this code in your console to get started:</p>
+                    <div class="code-block">
+                        <pre><code class="language-js"><span class="keyword">fetch</span>(<span class="string">'https://your-app.vercel.app/api/posts'</span>)
+  .<span class="method">then</span>(response => response.json())
+  .<span class="method">then</span>(json => console.log(json))</code></pre>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-slate-600 dark:text-slate-400 mb-2" data-translate-key="quick_start_output">You'll get a JSON response like this:</p>
+                     <div class="code-block h-48">
+                        <pre><code class="language-json">[
+  {
+    "userId": 1,
+    "id": 1,
+    "title": "...",
+    "body": "..."
+  },
+  {
+    "userId": 1,
+    "id": 2,
+    "title": "...",
+    "body": "..."
+  },
+  ...
+]</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How it works Section -->
+        <section id="how-it-works" class="mb-16">
+            <h3 class="text-3xl font-bold text-center mb-8 text-slate-900 dark:text-white" data-translate-key="how_it_works_title">How It Works (The Smart Model)</h3>
+            <div class="grid md:grid-cols-3 gap-8 text-center">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-slate-700">
+                    <div class="text-5xl mb-4">🗂️</div>
+                    <h4 class="text-xl font-bold mb-2 text-slate-900 dark:text-white" data-translate-key="feature1_title">Fixed Base Data</h4>
+                    <p class="text-slate-600 dark:text-slate-400" data-translate-key="feature1_desc">The server starts with a rich set of mock data loaded in memory. This is the starting point for everyone.</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-slate-700">
+                    <div class="text-5xl mb-4">🧠</div>
+                    <h4 class="text-xl font-bold mb-2 text-slate-900 dark:text-white" data-translate-key="feature2_title">Smart Responses</h4>
+                    <p class="text-slate-600 dark:text-slate-400" data-translate-key="feature2_desc">When you send a POST or PUT request, the server validates your data and replies with a realistic response (e.g., 201 Created) as if it were saved.</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-slate-700">
+                    <div class="text-5xl mb-4">💨</div>
+                    <h4 class="text-xl font-bold mb-2 text-slate-900 dark:text-white" data-translate-key="feature3_title">Stateless & Clean</h4>
+                    <p class="text-slate-600 dark:text-slate-400" data-translate-key="feature3_desc">No changes are saved permanently. Every developer gets a clean, isolated experience every time. No mess, no conflicting data.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Resources Section -->
+        <section id="resources" class="mb-16">
+            <h3 class="text-3xl font-bold text-center mb-8 text-slate-900 dark:text-white" data-translate-key="resources_title">Available Resources (Endpoints)</h3>
+            <p class="text-center text-slate-600 dark:text-slate-400 mb-2 max-w-2xl mx-auto" data-translate-key="resources_desc">
+                The API has many different resources. Click on any resource to see interactive examples below.
+            </p>
+            <p class="text-center text-slate-600 dark:text-slate-400 mb-8 max-w-2xl mx-auto">
+                <span data-translate-key="base_url">Base URL:</span> <code class="bg-gray-200 dark:bg-slate-700 text-sky-600 dark:text-yellow-300 px-2 py-1 rounded">https://your-app.vercel.app/api</code>
+            </p>
+            <div id="resource-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 text-center">
+                <!-- Links will be populated by JS -->
+            </div>
+        </section>
+        
+        <!-- Examples Section -->
+        <section id="examples" class="mb-16">
+            <h3 class="text-3xl font-bold text-center mb-8 text-slate-900 dark:text-white" data-translate-key="usage_examples_title">Usage Examples</h3>
+            <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-6">
+                <!-- GET Example -->
+                <div class="mb-8">
+                    <h4 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100" data-translate-key="get_title">1. Fetching Resources (GET)</h4>
+                    <p class="text-slate-600 dark:text-slate-400 mb-4" data-translate-key="get_desc_all">To fetch a list of all items for a resource.</p>
+                    <div class="code-block">
+                        <pre><code id="get-all-code"></code></pre>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-400 my-4" data-translate-key="get_desc_one">To fetch a single, specific item:</p>
+                    <div class="code-block">
+                        <pre><code id="get-one-code"></code></pre>
+                    </div>
+                </div>
+
+                <!-- POST Example -->
+                <div class="mb-8">
+                    <h4 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100" data-translate-key="post_title">2. Creating a Resource (POST)</h4>
+                    <p class="text-slate-600 dark:text-slate-400 mb-4" data-translate-key="post_desc">When creating a new resource, the API validates your data and responds as if it saved it, returning a new `id`.</p>
+                    <div class="code-block">
+                        <pre><code id="post-code"></code></pre>
+                    </div>
+                     <p class="text-amber-600 dark:text-amber-400 mt-4 bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-600 p-3 rounded-md" data-translate-key="post_note">
+                        <strong>Important:</strong> If you send incorrect or missing data (e.g., no `title` for a post), you will receive a `400 Bad Request` error response with an explanatory message. Try it yourself!
+                    </p>
+                </div>
+                 <!-- Nested Routes -->
+                <div class="mb-8">
+                    <h4 class="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100" data-translate-key="nested_title">3. Nested Routes</h4>
+                    <p class="text-slate-600 dark:text-slate-400 mb-4" data-translate-key="nested_desc">You can easily fetch related resources. For example, all posts for a specific user.</p>
+                    <div class="code-block">
+                        <pre><code id="nested-code"></code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Developer Guide Section -->
+        <section id="guide" class="mb-16">
+            <h3 class="text-3xl font-bold text-center mb-8 text-slate-900 dark:text-white" data-translate-key="guide_title">Developer Guide</h3>
+            <div class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-6 space-y-8">
+                <div>
+                    <h4 class="text-xl font-bold text-slate-900 dark:text-slate-100" data-translate-key="guide_methods_title">HTTP Methods</h4>
+                    <ul class="list-disc list-inside text-slate-600 dark:text-slate-400 mt-2 space-y-1 ltr:pl-4 rtl:pr-4">
+                        <li><strong class="text-sky-600 dark:text-sky-400">GET:</strong> <span data-translate-key="guide_get_desc">Used to retrieve data. It's a read-only operation.</span></li>
+                        <li><strong class="text-green-600 dark:text-green-400">POST:</strong> <span data-translate-key="guide_post_desc">Used to create a new resource.</span></li>
+                        <li><strong class="text-yellow-600 dark:text-yellow-400">PUT:</strong> <span data-translate-key="guide_put_desc">Used to update an existing resource completely.</span></li>
+                        <li><strong class="text-orange-500 dark:text-orange-400">PATCH:</strong> <span data-translate-key="guide_patch_desc">Used to partially update an existing resource.</span></li>
+                        <li><strong class="text-red-600 dark:text-red-400">DELETE:</strong> <span data-translate-key="guide_delete_desc">Used to delete an existing resource.</span></li>
+                    </ul>
+                </div>
+                 <div>
+                    <h4 class="text-xl font-bold text-slate-900 dark:text-slate-100" data-translate-key="guide_codes_title">Common Status Codes</h4>
+                    <ul class="list-disc list-inside text-slate-600 dark:text-slate-400 mt-2 space-y-1 ltr:pl-4 rtl:pr-4">
+                        <li><strong class="text-green-600 dark:text-green-400">200 OK:</strong> <span data-translate-key="guide_200_desc">The request was successful.</span></li>
+                        <li><strong class="text-green-600 dark:text-green-400">201 Created:</strong> <span data-translate-key="guide_201_desc">The request was successful and a resource was created (response to POST).</span></li>
+                        <li><strong class="text-yellow-600 dark:text-yellow-400">400 Bad Request:</strong> <span data-translate-key="guide_400_desc">The server cannot process the request due to a client error (e.g., malformed data).</span></li>
+                        <li><strong class="text-red-600 dark:text-red-400">404 Not Found:</strong> <span data-translate-key="guide_404_desc">The requested resource could not be found on the server.</span></li>
+                        <li><strong class="text-red-600 dark:text-red-400">500 Internal Server Error:</strong> <span data-translate-key="guide_500_desc">A generic error message, given when an unexpected condition was encountered on the server.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-200 dark:bg-slate-800/50 border-t border-gray-300 dark:border-slate-700 py-6">
+        <div class="container mx-auto text-center text-slate-600 dark:text-slate-400">
+            <p data-translate-key="footer_rights">&copy; 2025 - FakeAPI. All rights are fictionally reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- DATA & CONFIGURATION ---
+
+        const translations = {
+             en: {
+                title: "FakeAPI",
+                hero_title: "Welcome to FakeAPI",
+                hero_subtitle: "The Next Generation of Mock APIs for Developers.",
+                hero_description: "We provide a smart, stateless API. Test POST, PUT, DELETE requests with real data validation and realistic responses, without permanent data storage or clutter.",
+                quick_start_title: "Quick Start",
+                quick_start_desc: "Run this code in your console to get started:",
+                quick_start_output: "You'll get a JSON response like this:",
+                how_it_works_title: "How It Works (The Smart Model)",
+                feature1_title: "Fixed Base Data",
+                feature1_desc: "The server starts with a rich set of mock data loaded in memory. This is the starting point for everyone.",
+                feature2_title: "Smart Responses",
+                feature2_desc: "When you send a POST or PUT request, the server validates your data and replies with a realistic response (e.g., 201 Created) as if it were saved.",
+                feature3_title: "Stateless & Clean",
+                feature3_desc: "No changes are saved permanently. Every developer gets a clean, isolated experience every time. No mess, no conflicting data.",
+                resources_title: "Available Resources (Endpoints)",
+                resources_desc: "The API has many different resources. Click on any resource to see interactive examples below.",
+                base_url: "Base URL:",
+                usage_examples_title: "Usage Examples",
+                get_title: "1. Fetching Resources (GET)",
+                get_desc_all: "To fetch a list of all items for a resource.",
+                get_desc_one: "To fetch a single, specific item:",
+                post_title: "2. Creating a Resource (POST)",
+                post_desc: "When creating a new resource, the API validates your data and responds as if it saved it, returning a new `id`.",
+                post_note: "Important: If you send incorrect or missing data (e.g., no `title` for a post), you will receive a `400 Bad Request` error response with an explanatory message. Try it yourself!",
+                nested_title: "3. Nested Routes",
+                nested_desc: "You can easily fetch related resources. For example, all posts for a specific user.",
+                guide_title: "Developer Guide",
+                guide_methods_title: "HTTP Methods",
+                guide_get_desc: "Used to retrieve data. It's a read-only operation.",
+                guide_post_desc: "Used to create a new resource.",
+                guide_put_desc: "Used to update an existing resource completely.",
+                guide_patch_desc: "Used to partially update an existing resource.",
+                guide_delete_desc: "Used to delete an existing resource.",
+                guide_codes_title: "Common Status Codes",
+                guide_200_desc: "The request was successful.",
+                guide_201_desc: "The request was successful and a resource was created (response to POST).",
+                guide_400_desc: "The server cannot process the request due to a client error (e.g., malformed data).",
+                guide_404_desc: "The requested resource could not be found on the server.",
+                guide_500_desc: "A generic error message, given when an unexpected condition was encountered on the server.",
+                footer_rights: "© 2025 - FakeAPI. All rights are fictionally reserved."
+            },
+            ar: {
+                title: "FakeAPI",
+                hero_title: "أهلاً بك في FakeAPI",
+                hero_subtitle: "الجيل الجديد من واجهات برمجة التطبيقات الوهمية للمطورين.",
+                hero_description: "نحن نقدم واجهة برمجة تطبيقات ذكية وعديمة الحالة. اختبر طلبات POST, PUT, DELETE مع تحقق حقيقي من البيانات واستجابات واقعية، بدون حفظ دائم للبيانات وبدون فوضى.",
+                quick_start_title: "البداية السريعة",
+                quick_start_desc: "شغّل هذا الكود في واجهة الأوامر لديك للبدء:",
+                quick_start_output: "ستحصل على استجابة JSON كهذه:",
+                how_it_works_title: "كيف يعمل؟ (النموذج الذكي)",
+                feature1_title: "بيانات أساسية ثابتة",
+                feature1_desc: "يبدأ الخادم بمجموعة غنية من البيانات الوهمية مُحمَّلة في الذاكرة. هذه هي نقطة البداية للجميع.",
+                feature2_title: "استجابات ذكية",
+                feature2_desc: "عند إرسال طلب `POST` أو `PUT`، يقوم الخادم بالتحقق من صحة بياناتك ويرد باستجابة واقعية (مثل `201 Created`) كما لو أن البيانات حُفظت.",
+                feature3_title: "عديم الحالة ونظيف",
+                feature3_desc: "لا يتم حفظ أي تغييرات بشكل دائم. كل مطور يحصل على تجربة نظيفة ومعزولة في كل مرة. لا فوضى، لا بيانات متضاربة.",
+                resources_title: "الموارد المتاحة (Endpoints)",
+                resources_desc: "تحتوي واجهة برمجة التطبيقات على العديد من الموارد المختلفة. اضغط على أي مورد لرؤية أمثلة تفاعلية في الأسفل.",
+                base_url: "عنوان URL الأساسي:",
+                usage_examples_title: "أمثلة على الاستخدام",
+                get_title: "١. جلب الموارد (GET)",
+                get_desc_all: "لجلب قائمة بجميع العناصر لمورد معين.",
+                get_desc_one: "لجلب عنصر واحد محدد:",
+                post_title: "٢. إنشاء مورد (POST)",
+                post_desc: "عند إنشاء مورد جديد، تقوم الواجهة بالتحقق من صحة بياناتك وترد كما لو أنها حفظتها بالفعل، مع إعطائك `id` جديد.",
+                post_note: "ملاحظة هامة: إذا أرسلت بيانات غير صحيحة أو ناقصة (مثل عدم وجود `title` لمنشور)، فستتلقى استجابة خطأ `400 Bad Request` مع رسالة توضيحية. جرب بنفسك!",
+                nested_title: "٣. المسارات المتداخلة",
+                nested_desc: "يمكنك بسهولة جلب الموارد المرتبطة. على سبيل المثال، جميع المنشورات لمستخدم معين.",
+                guide_title: "دليل المطور",
+                guide_methods_title: "أوامر HTTP",
+                guide_get_desc: "تُستخدم لاسترداد البيانات. هي عملية قراءة فقط.",
+                guide_post_desc: "تُستخدم لإنشاء مورد جديد.",
+                guide_put_desc: "تُستخدم لتحديث مورد موجود بالكامل.",
+                guide_patch_desc: "تُستخدم لتحديث مورد موجود جزئيًا.",
+                guide_delete_desc: "تُستخدم لحذف مورد موجود.",
+                guide_codes_title: "أكواد الحالة الشائعة",
+                guide_200_desc: "نجح الطلب.",
+                guide_201_desc: "نجح الطلب وتم إنشاء مورد (استجابة لـ POST).",
+                guide_400_desc: "لا يمكن للخادم معالجة الطلب بسبب خطأ من العميل (مثل بيانات مشوهة).",
+                guide_404_desc: "تعذر العثور على المورد المطلوب على الخادم.",
+                guide_500_desc: "رسالة خطأ عامة، تُعطى عند حدوث حالة غير متوقعة على الخادم.",
+                footer_rights: "© 2025 - FakeAPI. جميع الحقوق محفوظة بشكل وهمي."
+            },
+            fr: {
+                title: "FakeAPI",
+                hero_title: "Bienvenue sur FakeAPI",
+                hero_subtitle: "La nouvelle génération d'API Mock pour les développeurs.",
+                hero_description: "Nous fournissons une API intelligente et sans état. Testez les requêtes POST, PUT, DELETE avec une validation de données réelle et des réponses réalistes, sans stockage de données permanent ni désordre.",
+                quick_start_title: "Démarrage rapide",
+                quick_start_desc: "Exécutez ce code dans votre console pour commencer:",
+                quick_start_output: "Vous obtiendrez une réponse JSON comme celle-ci:",
+                how_it_works_title: "Comment ça marche (Le modèle intelligent)",
+                feature1_title: "Données de base fixes",
+                feature1_desc: "Le serveur démarre avec un riche ensemble de données fictives chargées en mémoire. C'est le point de départ pour tout le monde.",
+                feature2_title: "Réponses intelligentes",
+                feature2_desc: "Lorsque vous envoyez une requête POST ou PUT, le serveur valide vos données et répond avec une réponse réaliste (par ex., 201 Created) comme si elles étaient enregistrées.",
+                feature3_title: "Sans état et propre",
+                feature3_desc: "Aucune modification n'est enregistrée de manière permanente. Chaque développeur bénéficie d'une expérience propre et isolée à chaque fois. Pas de désordre, pas de données conflictuelles.",
+                resources_title: "Ressources disponibles (Endpoints)",
+                resources_desc: "L'API dispose de nombreuses ressources différentes. Cliquez sur n'importe quelle ressource pour voir des exemples interactifs ci-dessous.",
+                base_url: "URL de base:",
+                usage_examples_title: "Exemples d'utilisation",
+                get_title: "1. Récupérer des ressources (GET)",
+                get_desc_all: "Pour récupérer une liste de tous les éléments d'une ressource.",
+                get_desc_one: "Pour récupérer un seul élément spécifique :",
+                post_title: "2. Créer une ressource (POST)",
+                post_desc: "Lors de la création d'une nouvelle ressource, l'API valide vos données et répond comme si elle les avait enregistrées, en renvoyant un nouvel `id`.",
+                post_note: "Important : Si vous envoyez des données incorrectes ou manquantes (par ex., pas de `title` pour un post), vous recevrez une réponse d'erreur `400 Bad Request` avec un message explicatif. Essayez vous-même !",
+                nested_title: "3. Routes imbriquées",
+                nested_desc: "Vous pouvez facilement récupérer des ressources associées. Par exemple, tous les posts d'un utilisateur spécifique.",
+                guide_title: "Guide du développeur",
+                guide_methods_title: "Méthodes HTTP",
+                guide_get_desc: "Utilisé pour récupérer des données. C'est une opération de lecture seule.",
+                guide_post_desc: "Utilisé pour créer une nouvelle ressource.",
+                guide_put_desc: "Utilisé pour mettre à jour complètement une ressource existante.",
+                guide_patch_desc: "Utilisé pour mettre à jour partiellement une ressource existante.",
+                guide_delete_desc: "Utilisé pour supprimer une ressource existante.",
+                guide_codes_title: "Codes d'état courants",
+                guide_200_desc: "La requête a réussi.",
+                guide_201_desc: "La requête a réussi et une ressource a été créée (réponse à POST).",
+                guide_400_desc: "Le serveur ne peut pas traiter la requête en raison d'une erreur du client (par ex., données mal formées).",
+                guide_404_desc: "La ressource demandée n'a pas pu être trouvée sur le serveur.",
+                guide_500_desc: "Un message d'erreur générique, donné lorsqu'une condition inattendue a été rencontrée sur le serveur.",
+                footer_rights: "© 2025 - FakeAPI. Tous droits fictivement réservés."
+            },
+            ru: {
+                title: "FakeAPI",
+                hero_title: "Добро пожаловать в FakeAPI",
+                hero_subtitle: "Новое поколение Mock API для разработчиков.",
+                hero_description: "Мы предоставляем умный API без сохранения состояния. Тестируйте запросы POST, PUT, DELETE с реальной проверкой данных и реалистичными ответами, без постоянного хранения данных и беспорядка.",
+                quick_start_title: "Быстрый старт",
+                quick_start_desc: "Выполните этот код в вашей консоли, чтобы начать:",
+                quick_start_output: "Вы получите JSON-ответ, подобный этому:",
+                how_it_works_title: "Как это работает (Умная модель)",
+                feature1_title: "Фиксированные базовые данные",
+                feature1_desc: "Сервер запускается с богатым набором фиктивных данных, загруженных в память. Это отправная точка для всех.",
+                feature2_title: "Умные ответы",
+                feature2_desc: "Когда вы отправляете запрос POST или PUT, сервер проверяет ваши данные и отвечает реалистичным ответом (например, 201 Created), как если бы они были сохранены.",
+                feature3_title: "Без состояния и чисто",
+                feature3_desc: "Никакие изменения не сохраняются постоянно. Каждый разработчик получает чистый, изолированный опыт каждый раз. Никакого беспорядка, никаких конфликтующих данных.",
+                resources_title: "Доступные ресурсы (Endpoints)",
+                resources_desc: "API имеет много различных ресурсов. Нажмите на любой ресурс, чтобы увидеть интерактивные примеры ниже.",
+                base_url: "Базовый URL:",
+                usage_examples_title: "Примеры использования",
+                get_title: "1. Получение ресурсов (GET)",
+                get_desc_all: "Для получения списка всех элементов ресурса.",
+                get_desc_one: "Для получения одного конкретного элемента:",
+                post_title: "2. Создание ресурса (POST)",
+                post_desc: "При создании нового ресурса API проверяет ваши данные и отвечает так, как будто сохранил их, возвращая новый `id`.",
+                post_note: "Важно: Если вы отправите неверные или отсутствующие данные (например, без `title` для поста), вы получите ответ об ошибке `400 Bad Request` с пояснительным сообщением. Попробуйте сами!",
+                nested_title: "3. Вложенные маршруты",
+                nested_desc: "Вы можете легко получать связанные ресурсы. Например, все посты определенного пользователя.",
+                guide_title: "Руководство для разработчика",
+                guide_methods_title: "Методы HTTP",
+                guide_get_desc: "Используется для получения данных. Это операция только для чтения.",
+                guide_post_desc: "Используется для создания нового ресурса.",
+                guide_put_desc: "Используется для полного обновления существующего ресурса.",
+                guide_patch_desc: "Используется для частичного обновления существующего ресурса.",
+                guide_delete_desc: "Используется для удаления существующего ресурса.",
+                guide_codes_title: "Общие коды состояния",
+                guide_200_desc: "Запрос выполнен успешно.",
+                guide_201_desc: "Запрос выполнен успешно, и ресурс был создан (ответ на POST).",
+                guide_400_desc: "Сервер не может обработать запрос из-за ошибки клиента (например, искаженные данные).",
+                guide_404_desc: "Запрошенный ресурс не найден на сервере.",
+                guide_500_desc: "Общее сообщение об ошибке, выдаваемое при возникновении непредвиденной ситуации на сервере.",
+                footer_rights: "© 2025 - FakeAPI. Все права вымышленно защищены."
+            }
+        };
+        
+        const resources = [
+            'users', 'posts', 'comments', 'products', 'books', 'todos', 'photos', 'albums',
+            'recipes', 'restaurants', 'companies', 'orders', 'invoices', 'vehicles', 'articles',
+            'events', 'teams', 'projects', 'reviews', 'locations', 'jobs', 'tasks', 'forums',
+            'threads', 'messages', 'phones', 'apartments', 'villas'
+        ];
+
+        // --- FUNCTIONS ---
+
+        function setLanguage(lang) {
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.body.className = document.body.className.replace(/lang-\w+/, `lang-${lang}`);
+
+            document.querySelectorAll('[data-translate-key]').forEach(el => {
+                const key = el.getAttribute('data-translate-key');
+                el.innerHTML = translations[lang][key] || el.innerHTML;
+            });
+
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${lang}`).classList.add('active');
+        }
+
+        function updateExampleCode(resource) {
+            const baseUrl = 'https://your-app.vercel.app/api';
+            
+            document.querySelectorAll('.resource-link').forEach(link => {
+                link.classList.toggle('active', link.dataset.resourceName === resource);
+            });
+
+            document.getElementById('get-all-code').innerHTML = `<span class="keyword">fetch</span>(<span class="string">'${baseUrl}/${resource}'</span>)
+  .<span class="method">then</span>(res => res.json())
+  .<span class="method">then</span>(json => console.log(json))`;
+            
+            document.getElementById('get-one-code').innerHTML = `<span class="keyword">fetch</span>(<span class="string">'${baseUrl}/${resource}/1'</span>)
+  .<span class="method">then</span>(...)`;
+            
+            let postBody = `{
+    <span class="comment">// ...data matching the resource structure</span>
+  }`;
+            if (resource === 'posts' || resource === 'articles') {
+                postBody = `{
+    <span class="keyword">title</span>: <span class="string">'A new title'</span>,
+    <span class="keyword">body</span>: <span class="string">'The content...'</span>,
+    <span class="keyword">userId</span>: <span class="number">1</span>
+  }`;
+            } else if (resource === 'products'){
+                 postBody = `{
+    <span class="keyword">name</span>: <span class="string">'Permissible Product'</span>,
+    <span class="keyword">price</span>: <span class="number">19.99</span>
+  }`;
+            } else if (resource === 'phones'){
+                 postBody = `{
+    <span class="keyword">name</span>: <span class="string">'Smartphone Pro'</span>,
+    <span class="keyword">brand</span>: <span class="string">'TechBrand'</span>,
+    <span class="keyword">price</span>: <span class="number">999.99</span>
+  }`;
+            } else if (resource === 'apartments' || resource === 'villas'){
+                 postBody = `{
+    <span class="keyword">title</span>: <span class="string">'Modern Downtown Apartment'</span>,
+    <span class="keyword">area</span>: <span class="number">120</span>,
+    <span class="keyword">price</span>: <span class="number">500000</span>
+  }`;
+            }
+
+            document.getElementById('post-code').innerHTML = `<span class="keyword">fetch</span>(<span class="string">'${baseUrl}/${resource}'</span>, {
+  <span class="keyword">method</span>: <span class="string">'POST'</span>,
+  <span class="keyword">body</span>: JSON.<span class="method">stringify</span>(${postBody}),
+  <span class="keyword">headers</span>: { <span class="string">'Content-type'</span>: <span class="string">'application/json; charset=UTF-8'</span> },
+})
+  .<span class="method">then</span>(res => res.json())
+  .<span class="method">then</span>(json => console.log(json));
+<span class="comment">
+// 👇 Expected Response
+// { id: 51, ... }</span>`;
+
+            document.getElementById('nested-code').innerHTML = `<span class="comment">// Get all comments for post with id 1</span>
+<span class="keyword">fetch</span>(<span class="string">'${baseUrl}/posts/1/comments'</span>)
+  .<span class="method">then</span>(res => res.json())
+  .<span class="method">then</span>(json => console.log(json))
+  
+<span class="comment">// Get all posts for user with id 2</span>
+<span class="keyword">fetch</span>(<span class="string">'${baseUrl}/users/2/posts'</span>)
+  .<span class="method">then</span>(res => res.json())
+  .<span class="method">then</span>(json => console.log(json))`;
+        }
+        
+        function populateResources() {
+            const grid = document.getElementById('resource-grid');
+            resources.sort().forEach(resource => {
+                const div = document.createElement('div');
+                div.className = 'resource-link bg-white dark:bg-slate-800 p-3 rounded-md border border-gray-200 dark:border-slate-700 shadow-sm transition-all duration-200 ease-in-out cursor-pointer';
+                div.dataset.resourceName = resource;
+                div.innerHTML = `<a href="#examples" class="font-mono text-lg text-sky-500 dark:text-sky-400 hover:text-sky-600 dark:hover:text-sky-300">/${resource}</a>`;
+                div.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.getElementById('examples').scrollIntoView({ behavior: 'smooth' });
+                    updateExampleCode(resource);
+                });
+                grid.appendChild(div);
+            });
+        }
+        
+        // --- THEME SWITCHER LOGIC ---
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+        const themeToggleBtn = document.getElementById('theme-toggle');
+
+        function updateThemeIcon(isDarkMode) {
+            themeToggleDarkIcon.classList.toggle('hidden', !isDarkMode);
+            themeToggleLightIcon.classList.toggle('hidden', isDarkMode);
+        }
+        
+        // Initial theme check on page load
+        if (localStorage.getItem('color-theme') === 'light' || (!('color-theme' in localStorage) && !window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+            updateThemeIcon(false);
+        } else {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+            updateThemeIcon(true);
+        }
+
+        themeToggleBtn.addEventListener('click', function() {
+            // toggle icons
+            themeToggleDarkIcon.classList.toggle('hidden');
+            themeToggleLightIcon.classList.toggle('hidden');
+
+            // if set via local storage previously
+            if (localStorage.getItem('color-theme')) {
+                if (localStorage.getItem('color-theme') === 'light') {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
+                    localStorage.setItem('color-theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
+                    localStorage.setItem('color-theme', 'light');
+                }
+            // if NOT set via local storage previously
+            } else {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
+                    localStorage.setItem('color-theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
+                    localStorage.setItem('color-theme', 'dark');
+                }
+            }
+        });
+
+
+        // --- INITIALIZATION ---
+        
+        window.onload = () => {
+            populateResources();
+            setLanguage('en'); // Default to English
+            updateExampleCode('posts'); // Default to posts examples
+        };
+    </script>
+</body>
+</html>
